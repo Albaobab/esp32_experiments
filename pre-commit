@@ -1,0 +1,6 @@
+#!/bin/sh
+
+jupyter nbconvert --MarkdownExporter.exclude_output=True --to markdown main.ipynb --output Readme.md
+
+git add .
+
