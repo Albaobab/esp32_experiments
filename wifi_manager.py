@@ -292,7 +292,7 @@ def start(port=80):
             print("Request is: {}".format(request))
             if "HTTP" not in request:  # skip invalid requests
                 continue
-
+            
             # version 1.9 compatibility
             try:
                 url = ure.search("(?:GET|POST) /(.*?)(?:\\?.*?)? HTTP", request).group(1).decode("utf-8").rstrip("/")

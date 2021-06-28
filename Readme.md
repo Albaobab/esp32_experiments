@@ -74,8 +74,8 @@ Run this command in a MicroPython Notebook to write the firmware to the both ser
 
 
 ```micropython
-%esptool --port=0 esp32 esp-now.bin
 %esptool --port=1 esp32 esp-now.bin
+%esptool --port=2 esp32 esp-now.bin
 ```
 
 
@@ -85,24 +85,31 @@ Run this command in a MicroPython Notebook to connect to the choosed serial port
 
 
 ```micropython
-%serialconnect --port=0 --baud=115200
+%serialconnect --port=1 --baud=115200
 ```
 
-#### Enable a Wifi manager on the Master device
+#### Enable a Wifi manager and Thingspeak communication on the Master device
 
 The serial port connected need to be Master's.
 
-Add the Wifi Manager Module to the device. 
-
 
 ```micropython
-%mpy-cross --set-exe mpy-cross
+%serialconnect --port=1 --baud=115200
 
 # The mpy-cross command is used to create byte code from a py file
+%mpy-cross --set-exe ./mpy-cross
+
+# WiFi Manager
 %mpy-cross wifi_manager.py
 # --binary is needed when sending a .mpy file
 %sendtofile --binary --source ./wifi_manager.mpy /
 %sendtofile --source ./boot_wifi_manager.py /boot.py
+
+%mpy-cross --set-exe ./mpy-cross
+
+# Thingspeak
+%mpy-cross thingspeak.py
+%sendtofile --binary --source ./thingspeak.mpy /
 
 import machine
 machine.reset()
@@ -118,14 +125,11 @@ Master
 
 
 ```micropython
-%serialconnect --port=0 --baud=115200
-
-%mpy-cross thingspeak.py
-%sendtofile --binary --source ./thingspeak.mpy /
+%serialconnect --port=1 --baud=115200
 
 import network
 from esp import espnow
-from thinkspeak import post_thingspeak, get_thingspeak
+from thingspeak import post_thingspeak, get_thingspeak
 
 wlan = network.WLAN(network.AP_IF)
 wlan.active(True)
@@ -139,7 +143,7 @@ Slave
 
 
 ```micropython
-%serialconnect --port=1 --baud=115200
+%serialconnect --port=2 --baud=115200
 
 import network
 from esp import espnow
@@ -159,13 +163,13 @@ Master
 
 
 ```micropython
-%serialconnect --port=0 --baud=115200
+%serialconnect --port=1 --baud=115200
 
 e = espnow.ESPNow()
 e.init()
 
-# Put here the MAC printed
-peer = b'SLAVE_MAC'
+# Put here the Slave MAC printed
+peer = b'L\x11\xae\x89\xbc\x95'
 
 e.add_peer(peer, ifidx=network.AP_IF)
 ```
@@ -175,13 +179,13 @@ Slave
 
 
 ```micropython
-%serialconnect --port=1 --baud=115200
+%serialconnect --port=2 --baud=115200
 
 e = espnow.ESPNow()
 e.init()
 
-# Put here the MAC printed
-peer = b'MASTER_MAC'
+# Put here the Master MAC printed
+peer = b'L\x11\xae\x89\xbd\xd5'
 
 e.add_peer(peer, ifidx=network.AP_IF)
 ```
@@ -197,7 +201,7 @@ Master
 
 
 ```micropython
-%serialconnect --port=0 --baud=115200
+%serialconnect --port=1 --baud=115200
 
 e.clear(True)
 while True:
@@ -213,7 +217,7 @@ Slave
 
 
 ```micropython
-%serialconnect --port=1 --baud=115200
+%serialconnect --port=2 --baud=115200
 
 import time
 
@@ -235,7 +239,7 @@ Master
 
 
 ```micropython
-%serialconnect --port=0 --baud=115200
+%serialconnect --port=2 --baud=115200
 
 import time
 
@@ -249,14 +253,13 @@ while True:
         while not ok:
             ok = e.send(peer, data, True)
     time.sleep(1)
-
 ```
 
 Slave
 
 
 ```micropython
-%serialconnect --port=1 --baud=115200
+%serialconnect --port=2 --baud=115200
 
 e.clear(True)
 while True:

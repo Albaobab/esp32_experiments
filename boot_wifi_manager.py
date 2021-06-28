@@ -6,4 +6,5 @@
 
 import wifi_manager
 
+wifi_manager.write_profiles({'Turtlebot': 'Turtlebot'})
 STA_WLAN = wifi_manager.get_connection()
