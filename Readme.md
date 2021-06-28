@@ -32,6 +32,8 @@ Custom firmwares integrating [ESP-NOW](https://www.espressif.com/en/products/sof
 ## Installation
 
 #### Python
+
+```shell
 # Debian-based
 apt install python
 
@@ -40,12 +42,26 @@ pacman -S python
 
 # RedHat-based
 dnf install python3
+```
+
 #### MicroPython
+
+```shell
 pip install esptool
+```
+
 #### Jupyter
 You may use either JupyterLab or JupyterNotebook at your convenience
+
+```shell
 pip install jupyterlab
 pip install notebook
+```
+
+
+
+
+
 Up to run MicroPython code under ESP32, a specific Jupyter Kernel is needed
 pip install jupyter_micropython_kernel
 python -m jupyter_micropython_kernel.install
