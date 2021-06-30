@@ -59,8 +59,12 @@ pip install notebook
 ```
 
 Up to run MicroPython code under ESP32, a specific Jupyter Kernel is needed
+
+```shell
 pip install jupyter_micropython_kernel
 python -m jupyter_micropython_kernel.install
+```
+
 Now run either JupyterLab or JupyterNotebook 
 
 ## Experiments
