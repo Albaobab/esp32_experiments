@@ -27,7 +27,7 @@ Custom firmwares integrating [ESP-NOW](https://www.espressif.com/en/products/sof
 
 #### WiFi Sniffing
 
-[ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/) allow developpers to create easily a WiFi sniffer, their is currently no custom firmware allowing it in [MicroPython](https://en.wikipedia.org/wiki/MicroPython), therefore we are currently working on creating it.
+[ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/) allow developpers to create easily a WiFi sniffer, while it is not currently added in [MicroPython](https://en.wikipedia.org/wiki/MicroPython), we forked [MicroPython](https://en.wikipedia.org/wiki/MicroPython) to https://github.com/Albaobab/micropython with this functionality.
 
 ## Installation
 
@@ -201,7 +201,7 @@ Master
 e = espnow.ESPNow()
 e.init()
 
-# Put here the Slave MAC printed
+# Put here the Slaves MACs printed
 e.add_peer(b'$o(\xc8\x01%', ifidx=network.AP_IF)
 e.add_peer(b"\xfc\xf5\xc4'\xcc1", ifidx=network.AP_IF)
 ```
@@ -247,6 +247,8 @@ Master
 
 ```micropython
 %serialconnect --port=1 --baud=115200
+def prettify(byte_array):
+    return ':'.join('%02x' % int(b) for b in byte_array)
 
 e.clear(True)
 while True:
@@ -255,7 +257,7 @@ while True:
         for host, msg in e:
             if msg and (str(msg, 'utf8') != last):
                 last = str(msg, 'utf8')
-                post_thingspeak("E13BHXREJ6K0V1DQ", [msg])
+                post_thingspeak("E13BHXREJ6K0V1DQ", [msg, prettify(host)], proxy="193.52.104.20", proxy_port=3128)
 ```
 
 Slave
@@ -284,13 +286,17 @@ Master
 
 
 ```micropython
-%serialconnect --port=2 --baud=115200
+%serialconnect --port=1 --baud=115200
 
 import time
 
+# Broadcast address to send to every Slaves
+peer = b'\xff\xff\xff\xff\xff\xff'
+e.add_peer(peer)
+
 last = ""
 while True:
-    data = get_thingspeak("179")
+    data = get_thingspeak("179", "193.52.104.20", 3128)
     print(data)
     if (data != last):
         last = data
@@ -315,3 +321,93 @@ while True:
                 last = str(msg, 'utf8')
                 print(msg)
 ```
+
+### Wifi Sniffing
+
+#### Modifying [MicroPython](https://en.wikipedia.org/wiki/MicroPython)'s code base
+
+Up to use C libraries inside [MicroPython](https://en.wikipedia.org/wiki/MicroPython), we need to understand how Python objects are transformed to C types and inversely.
+
+Complete files shown below can be found in the [Github repository of Micropython](https://github.com/micropython/micropython).
+
+Every single type is a simple pointer interpreted as whatever we want.
+
+##### `py/obj.h`
+```c
+...
+typedef void *mp_obj_t;
+typedef const void *mp_const_obj_t;
+...
+```
+
+For example, if we want to transform an integer given by a C library to a MicroPython integer object, we can use `mp_obj_new_int`.
+
+##### `py/obj.h`
+```c
+...
+#define MP_OBJ_NEW_SMALL_INT(small_int) ((mp_obj_t)((((mp_uint_t)(small_int)) << 2) | 1))
+...
+mp_obj_t mp_obj_new_int(mp_int_t value);
+...
+```
+##### `py/objint.c`
+```c
+mp_obj_t mp_obj_new_int(mp_int_t value) {
+    if (MP_SMALL_INT_FITS(value)) {
+        return MP_OBJ_NEW_SMALL_INT(value);
+    }
+    mp_raise_msg(&mp_type_OverflowError, MP_ERROR_TEXT("small int overflow"));
+    return mp_const_none;
+}
+...
+```
+
+In the other side, calling `mp_obj_get_int` will able to get an integer from a MicroPython object and to return it to the user.
+
+##### `ports/esp32/mpconfigport.h`
+```c
+...
+typedef int32_t mp_int_t;
+...
+```
+##### `py/obj.h`
+```c
+...
+#define MP_OBJ_SMALL_INT_VALUE(o) (((mp_int_t)(o)) >> 1)
+...
+mp_int_t mp_obj_get_int(mp_const_obj_t arg);
+...
+```
+##### `py/objint.c`
+```c
+...
+mp_int_t mp_obj_get_int(mp_const_obj_t arg) {
+    if (arg == mp_const_false) {
+        return 0;
+    } else if (arg == mp_const_true) {
+        return 1;
+    } else if (mp_obj_is_small_int(arg)) {
+        return MP_OBJ_SMALL_INT_VALUE(arg);
+    } else if (mp_obj_is_type(arg, &mp_type_int)) {
+        return mp_obj_int_get_checked(arg);
+    } else {
+        mp_obj_t res = mp_unary_op(MP_UNARY_OP_INT, (mp_obj_t)arg);
+        return mp_obj_int_get_checked(res);
+    }
+}
+...
+```
+
+The easiest and most light weight way to create an object-like return value is using MicroPython tuples this way :
+
+```c
+mp_obj_t raw_tuple[] = {
+    mp_obj_new_tuple(number_of_objects_in_another_raw_tuple, another_raw_tuple),
+    mp_obj_new_bytes(byte_array, length_of_byte_array),
+    mp_obj_new_int(10),
+};
+
+mp_obj_t tuple = mp_obj_new_tuple(3, raw_tuple);
+```
+
+
