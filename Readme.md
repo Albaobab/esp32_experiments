@@ -89,7 +89,7 @@ https://micropython-glenn20.readthedocs.io/en/latest/library/espnow.html
 Run this command in a MicroPython Notebook to write the firmware to the both serial ports :
 
 
-```micropython
+```python
 %esptool --port=1 esp32 bin/esp-now.bin
 %esptool --port=2 esp32 bin/esp-now.bin
 %esptool --port=3 esp32 bin/esp-now.bin
@@ -101,7 +101,7 @@ Run this command in a MicroPython Notebook to write the firmware to the both ser
 Run this command in a MicroPython Notebook to connect to the choosed serial port :
 
 
-```micropython
+```python
 %serialconnect --port=1 --baud=115200
 ```
 
@@ -110,7 +110,7 @@ Run this command in a MicroPython Notebook to connect to the choosed serial port
 The serial port connected need to be Master's.
 
 
-```micropython
+```python
 %serialconnect --port=1 --baud=115200
 
 # The mpy-cross command is used to create byte code from a py file
@@ -141,7 +141,7 @@ Then you need to connect a device to this Hotspot and access from a web browser 
 Master
 
 
-```micropython
+```python
 %serialconnect --port=1 --baud=115200
 
 import network
@@ -159,7 +159,7 @@ print(wlan.config('mac'))
 Slave
 
 
-```micropython
+```python
 %serialconnect --port=2 --baud=115200
 
 import network
@@ -175,7 +175,7 @@ print(wlan.config('mac'))
 ```
 
 
-```micropython
+```python
 %serialconnect --port=3 --baud=115200
 
 import network
@@ -195,7 +195,7 @@ print(wlan.config('mac'))
 Master
 
 
-```micropython
+```python
 %serialconnect --port=1 --baud=115200
 
 e = espnow.ESPNow()
@@ -210,7 +210,7 @@ Slave
 
 
 
-```micropython
+```python
 %serialconnect --port=2 --baud=115200
 
 e = espnow.ESPNow()
@@ -223,7 +223,7 @@ e.add_peer(peer, ifidx=network.AP_IF)
 ```
 
 
-```micropython
+```python
 %serialconnect --port=3 --baud=115200
 
 e = espnow.ESPNow()
@@ -245,7 +245,7 @@ e.add_peer(peer, ifidx=network.AP_IF)
 Master
 
 
-```micropython
+```python
 %serialconnect --port=1 --baud=115200
 def prettify(byte_array):
     return ':'.join('%02x' % int(b) for b in byte_array)
@@ -263,7 +263,7 @@ while True:
 Slave
 
 
-```micropython
+```python
 %serialconnect --port=2 --baud=115200
 
 import time
@@ -285,7 +285,7 @@ for i in range(5):
 Master
 
 
-```micropython
+```python
 %serialconnect --port=1 --baud=115200
 
 import time
@@ -309,7 +309,7 @@ while True:
 Slave
 
 
-```micropython
+```python
 %serialconnect --port=2 --baud=115200
 
 e.clear(True)
@@ -409,5 +409,3 @@ mp_obj_t raw_tuple[] = {
 
 mp_obj_t tuple = mp_obj_new_tuple(3, raw_tuple);
 ```
-
-

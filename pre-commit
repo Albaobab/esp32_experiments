@@ -2,5 +2,7 @@
 
 jupyter nbconvert --MarkdownExporter.exclude_output=True --to markdown main.ipynb --output Readme.md
 
+chain=`cat Readme.md` && echo "${chain//\`\`\`micropython/\`\`\`python}" > Readme.md
+
 git add .
 
