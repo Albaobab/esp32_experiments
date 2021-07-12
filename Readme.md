@@ -90,8 +90,9 @@ Run this command in a MicroPython Notebook to write the firmware to the both ser
 
 
 ```micropython
-%esptool --port=1 esp32 esp-now.bin
-%esptool --port=2 esp32 esp-now.bin
+%esptool --port=1 esp32 bin/esp-now.bin
+%esptool --port=2 esp32 bin/esp-now.bin
+%esptool --port=3 esp32 bin/esp-now.bin
 ```
 
 
@@ -116,16 +117,16 @@ The serial port connected need to be Master's.
 %mpy-cross --set-exe ./mpy-cross
 
 # WiFi Manager
-%mpy-cross wifi_manager.py
+%mpy-cross lib/wifi_manager.py
 # --binary is needed when sending a .mpy file
-%sendtofile --binary --source ./wifi_manager.mpy /
-%sendtofile --source ./boot_wifi_manager.py /boot.py
+%sendtofile --binary --source lib/wifi_manager.mpy /
+%sendtofile --source lib/boot_wifi_manager.py /boot.py
 
 %mpy-cross --set-exe ./mpy-cross
 
 # Thingspeak
-%mpy-cross thingspeak.py
-%sendtofile --binary --source ./thingspeak.mpy /
+%mpy-cross lib/thingspeak.py
+%sendtofile --binary --source lib/thingspeak.mpy /
 
 import machine
 machine.reset()
@@ -173,6 +174,22 @@ wlan.active(True)
 print(wlan.config('mac'))
 ```
 
+
+```micropython
+%serialconnect --port=3 --baud=115200
+
+import network
+from esp import espnow
+
+wlan = network.WLAN(network.AP_IF)
+wlan.config(hidden=True)
+wlan.config(ps_mode=network.WIFI_PS_NONE)
+wlan.active(True)
+
+# Prints Slave's MAC
+print(wlan.config('mac'))
+```
+
 #### Make Master and Slave peers
 
 Master
@@ -185,9 +202,8 @@ e = espnow.ESPNow()
 e.init()
 
 # Put here the Slave MAC printed
-peer = b'L\x11\xae\x89\xbc\x95'
-
-e.add_peer(peer, ifidx=network.AP_IF)
+e.add_peer(b'$o(\xc8\x01%', ifidx=network.AP_IF)
+e.add_peer(b"\xfc\xf5\xc4'\xcc1", ifidx=network.AP_IF)
 ```
 
 Slave
@@ -196,6 +212,19 @@ Slave
 
 ```micropython
 %serialconnect --port=2 --baud=115200
+
+e = espnow.ESPNow()
+e.init()
+
+# Put here the Master MAC printed
+peer = b'L\x11\xae\x89\xbd\xd5'
+
+e.add_peer(peer, ifidx=network.AP_IF)
+```
+
+
+```micropython
+%serialconnect --port=3 --baud=115200
 
 e = espnow.ESPNow()
 e.init()
